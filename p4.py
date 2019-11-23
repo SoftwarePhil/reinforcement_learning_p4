@@ -2,7 +2,7 @@ import numpy as np
 from hiive.visualization import mdpviz
 import gym
 import os
-
+import sys
 import matplotlib.pyplot as plt
 import mdptoolbox
 import mdptoolbox.example
@@ -14,9 +14,109 @@ import pandas as pd
 from collections import namedtuple
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from collections import defaultdict
+import itertools
+matplotlib.style.use('ggplot')
+
+#### PLOTING #####
+EpisodeStats = namedtuple("Stats",["episode_lengths", "episode_rewards"])
+def plot_cost_to_go_mountain_car(env, estimator, num_tiles=20):
+    x = np.linspace(env.observation_space.low[0], env.observation_space.high[0], num=num_tiles)
+    y = np.linspace(env.observation_space.low[1], env.observation_space.high[1], num=num_tiles)
+    X, Y = np.meshgrid(x, y)
+    Z = np.apply_along_axis(lambda _: -np.max(estimator.predict(_)), 2, np.dstack([X, Y]))
+
+    fig = plt.figure(figsize=(10, 5))
+    ax = fig.add_subplot(111, projection='3d')
+    surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
+                           cmap=matplotlib.cm.coolwarm, vmin=-1.0, vmax=1.0)
+    ax.set_xlabel('Position')
+    ax.set_ylabel('Velocity')
+    ax.set_zlabel('Value')
+    ax.set_title("Mountain \"Cost To Go\" Function")
+    fig.colorbar(surf)
+    #plt.show()
+    plt.savefig(env.name)
 
 
-class FireManagementSpec:
+def plot_value_function(V, title="Value Function"):
+    """
+    Plots the value function as a surface plot.
+    """
+    min_x = min(k[0] for k in V.keys())
+    max_x = max(k[0] for k in V.keys())
+    min_y = min(k[1] for k in V.keys())
+    max_y = max(k[1] for k in V.keys())
+
+    x_range = np.arange(min_x, max_x + 1)
+    y_range = np.arange(min_y, max_y + 1)
+    X, Y = np.meshgrid(x_range, y_range)
+
+    # Find value for all (x, y) coordinates
+    Z_noace = np.apply_along_axis(lambda _: V[(_[0], _[1], False)], 2, np.dstack([X, Y]))
+    Z_ace = np.apply_along_axis(lambda _: V[(_[0], _[1], True)], 2, np.dstack([X, Y]))
+
+    def plot_surface(X, Y, Z, title):
+        fig = plt.figure(figsize=(20, 10))
+        ax = fig.add_subplot(111, projection='3d')
+        surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
+                               cmap=matplotlib.cm.coolwarm, vmin=-1.0, vmax=1.0)
+        ax.set_xlabel('Player Sum')
+        ax.set_ylabel('Dealer Showing')
+        ax.set_zlabel('Value')
+        ax.set_title(title)
+        ax.view_init(ax.elev, -120)
+        fig.colorbar(surf)
+        #plt.show()
+        plt.savefig(env.name)
+
+    plot_surface(X, Y, Z_noace, "{} (No Usable Ace)".format(title))
+    plot_surface(X, Y, Z_ace, "{} (Usable Ace)".format(title))
+
+
+
+def plot_episode_stats(stats, smoothing_window=10, noshow=False, plt_name="default"):
+    # Plot the episode length over time
+    fig1 = plt.figure(figsize=(10,5))
+    plt.plot(stats.episode_lengths)
+    plt.xlabel("Episode")
+    plt.ylabel("Episode Length")
+    plt.title("Episode Length over Time")
+    if noshow:
+        plt.close(fig1)
+    else:
+        #plt.show(fig1)
+        plt.savefig(plt_name + "_elt.png")
+
+    # Plot the episode reward over time
+    fig2 = plt.figure(figsize=(10,5))
+    rewards_smoothed = pd.Series(stats.episode_rewards).rolling(smoothing_window, min_periods=smoothing_window).mean()
+    plt.plot(rewards_smoothed)
+    plt.xlabel("Episode")
+    plt.ylabel("Episode Reward (Smoothed)")
+    plt.title("Episode Reward over Time (Smoothed over window size {})".format(smoothing_window))
+    if noshow:
+        plt.close(fig2)
+    else:
+        #plt.show(fig2)
+        plt.savefig(plt_name + "_er.png")
+
+    # Plot time steps and episode number
+    fig3 = plt.figure(figsize=(10,5))
+    plt.plot(np.cumsum(stats.episode_lengths), np.arange(len(stats.episode_lengths)))
+    plt.xlabel("Time Steps")
+    plt.ylabel("Episode")
+    plt.title("Episode per time step")
+    if noshow:
+        plt.close(fig3)
+    else:
+        #plt.show(fig3)
+        plt.savefig(plt_name + "ts_en.png")
+
+    return fig1, fig2, fig3
+##### PLOTING END ########
+
+class FireManagementSpec():
     def __init__(self, population_classes=7, fire_classes=13, seed=1234, verbose=True):
         self.seed = seed
         self.verbose = verbose
@@ -199,7 +299,6 @@ class FireManagementSpec:
 
     def to_env(self):
         return self.spec.to_discrete_env()
-
 
 
 def timing(f):
@@ -399,7 +498,7 @@ def policy_iteration_fire(problem, R=None, T=None, gamma=0.9, max_iterations=10*
     # Get transitions and rewards
     if R is None or T is None:
         R, T = evaluate_rewards_and_transitions_fire(problem)
-    
+            
     #pi = mdptoolbox.mdp.PolicyIterationModified(R, T, 0.9)
     # Iterate and improve policies
     for i in range(max_iterations):
@@ -470,6 +569,75 @@ def make_epsilon_greedy_policy(Q, epsilon, nA):
         return A
     return policy_fn
 
+
+def q_learning(env, num_episodes, discount_factor=1.0, alpha=0.5, epsilon=0.1):
+    """
+    Q-Learning algorithm: Off-policy TD control. Finds the optimal greedy policy
+    while following an epsilon-greedy policy
+    
+    Args:
+        env: OpenAI environment.
+        num_episodes: Number of episodes to run for.
+        discount_factor: Gamma discount factor.
+        alpha: TD learning rate.
+        epsilon: Chance to sample a random action. Float between 0 and 1.
+    
+    Returns:
+        A tuple (Q, episode_lengths).
+        Q is the optimal action-value function, a dictionary mapping state -> action values.
+        stats is an EpisodeStats object with two numpy arrays for episode_lengths and episode_rewards.
+    """
+    
+    # The final action-value function.
+    # A nested dictionary that maps state -> (action -> action-value).
+    Q = defaultdict(lambda: np.zeros(env.action_space.n))
+
+    # Keeps track of useful statistics
+    stats = EpisodeStats(
+        episode_lengths=np.zeros(num_episodes),
+        episode_rewards=np.zeros(num_episodes))    
+    
+    # The policy we're following
+    policy = make_epsilon_greedy_policy(Q, epsilon, env.action_space.n)
+    
+    for i_episode in range(num_episodes):
+        # Print out which episode we're on, useful for debugging.
+        if (i_episode + 1) % 100 == 0:
+            print("\rEpisode {}/{}.".format(i_episode + 1, num_episodes), end="")
+            sys.stdout.flush()
+        
+        # Reset the environment and pick the first action
+        state = env.reset()
+        
+        # One step in the environment
+        # total_reward = 0.0
+        for t in itertools.count():
+            #print(t)
+            # Take a step
+            action_probs = policy(state)
+            action = np.random.choice(np.arange(len(action_probs)), p=action_probs)
+            next_state, reward, done, _ = env.step(action)
+
+            # Update statistics
+            stats.episode_rewards[i_episode] += reward
+            stats.episode_lengths[i_episode] = t
+            
+            # TD Update
+            best_next_action = np.argmax(Q[next_state])    
+            td_target = reward + discount_factor * Q[next_state][best_next_action]
+            td_delta = td_target - Q[state][action]
+            Q[state][action] += alpha * td_delta
+            ##max amount of iterations
+            if(t > 1000):
+                done = True
+
+            if done:
+                break
+                
+            state = next_state
+    
+    return Q, stats
+
 # # # FROZEN LAKE SMALL
 # mapping = {0: "L", 1: "D", 2: "R", 3: "U"}
 # # shape = (4, 4)
@@ -479,14 +647,65 @@ def make_epsilon_greedy_policy(Q, epsilon, nA):
 # shape = (8, 8)
 # run_discrete('FrozenLake8x8-v0', mapping ,shape)
 
-
 # PI/VI TAXI and FIRE MANAGEMENT
 #####TAXI#####
 mapping = {0: "S", 1: "N", 2: "E", 3: "W", 4: "P", 5: "D"}
 run_discrete('Taxi-v3', mapping)
+print("#"*30)
+
     
-fm_spec = FireManagementSpec(seed=694, verbose=False)
-# get env for gym
+fm_spec = FireManagementSpec(seed=6094, population_classes=7, fire_classes=13, verbose=False)
+# # get env for gym
 fm_env = fm_spec.to_env()
 #####FIRE#######
-run_discrete_fire(fm_env, {})
+r = run_discrete_fire(fm_env, {0:"noting", 1:"cut"}, (13,7))
+
+t,r = fm_spec.get_transition_and_reward_objects()
+vi = mdptoolbox.mdp.ValueIteration(t, r, 0.9)
+t1 = time.time()
+vi.run()
+t2 = time.time()
+print("VI run time: ", vi.time* 1000.0)
+# print(vi.P)
+print(vi.P)
+print("vi policy", vi.policy) # result is (0, 0, 0)
+print("iter", vi.iter)
+print("#"*30)
+print()
+
+t,r = fm_spec.get_transition_and_reward_objects()
+pi = mdptoolbox.mdp.PolicyIterationModified(t, r, 0.9)
+t1 = time.time()
+pi.run()
+t2 = time.time()
+
+print("PI run time: ", pi.time* 1000.0)
+print("pi policy", pi.policy) # result is (0, 0, 0)
+print("iter", pi.iter)
+print("#"*30)
+print()
+
+# ##### Q - LEARNING PART
+env = gym.make('Taxi-v3')
+Q, stats = q_learning(env, 500)
+plot_episode_stats(stats=stats, plt_name="taxi_v3")
+print("#"*30)
+print()
+
+fm_spec = FireManagementSpec(seed=694, population_classes=3, fire_classes=7, verbose=False)
+fm_env = fm_spec.to_env()
+
+Q, stats = q_learning(fm_env, 500, discount_factor=.9, alpha=0.1, epsilon=0.41)
+plot_episode_stats(stats=stats, plt_name="fire_management")
+q = mdptoolbox.mdp.QLearning(t, r, .9)
+
+t1 = time.time()
+q.run()
+t2 = time.time()
+
+print("Q run time: ", q.time* 1000.0)
+# print(pi.P)
+# print(pi.R)
+print("Q policy", q.policy) # result is (0, 0, 0)
+print()
+

@@ -1,0 +1,91 @@
+TXML01PD967N:ml_p4 pd967n$ python3 p4.py
+Taxi-v3#############################################
+Actions: 6
+States: 500
+[[b'+' b'-' b'-' b'-' b'-' b'-' b'-' b'-' b'-' b'-' b'+']
+ [b'|' b'R' b':' b' ' b'|' b' ' b':' b' ' b':' b'G' b'|']
+ [b'|' b' ' b':' b' ' b'|' b' ' b':' b' ' b':' b' ' b'|']
+ [b'|' b' ' b':' b' ' b':' b' ' b':' b' ' b':' b' ' b'|']
+ [b'|' b' ' b'|' b' ' b':' b' ' b'|' b' ' b':' b' ' b'|']
+ [b'|' b'Y' b'|' b' ' b':' b' ' b'|' b'B' b':' b' ' b'|']
+ [b'+' b'-' b'-' b'-' b'-' b'-' b'-' b'-' b'-' b'-' b'+']]
+
+value iteration
+value_iteration function took 315.062 ms
+Iterations: 95
+
+policy iteration
+policy_iteration function took 1276.759 ms
+iter: 18
+
+##############################
+Fire #############################################
+Actions: 2
+States: 91
+
+value iteration
+value_iteration_fire function took 5.242 ms
+Iterations: 67
+
+policy iteration
+policy_iteration_fire function took 7.478 ms
+iter: 2
+
+policy
+[['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']]
+[['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']
+ ['noting' 'noting' 'noting' 'noting' 'noting' 'noting' 'noting']]
+
+VI run time:  1.6901493072509766
+(array([[0.  , 1.  , 0.  , ..., 0.  , 0.  , 0.  ],
+       [0.  , 0.  , 1.  , ..., 0.  , 0.  , 0.  ],
+       [0.  , 0.  , 0.  , ..., 0.  , 0.  , 0.  ],
+       ...,
+       [0.  , 0.  , 0.  , ..., 0.75, 0.  , 0.  ],
+       [0.  , 0.  , 0.  , ..., 0.  , 0.  , 0.5 ],
+       [0.  , 0.  , 0.  , ..., 0.  , 0.  , 0.  ]]), array([[1., 0., 0., ..., 0., 0., 0.],
+       [1., 0., 0., ..., 0., 0., 0.],
+       [1., 0., 0., ..., 0., 0., 0.],
+       ...,
+       [0., 0., 0., ..., 0., 0., 0.],
+       [0., 0., 0., ..., 0., 0., 0.],
+       [0., 0., 0., ..., 0., 0., 0.]]))
+vi policy (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+iter 57
+##############################
+
+PI run time:  1.1699199676513672
+pi policy (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+iter 7
+##############################
+
+Episode 500/500.2019-11-23 17:06:26.351 Python[40414:1156403] ApplePersistenceIgnoreState: Existingstate will not be touched. New state will be written to (null)
+##############################
+
+Episode 500/500.Q run time:  318.09306144714355
+Q policy (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0)
+
+TXML01PD967N:ml_p4 pd967n$
